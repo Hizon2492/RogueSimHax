@@ -19,12 +19,21 @@ if getService("ReplicatedStorage"):FindFirstChild("JesterRuse") then
         local settings = {}
         local FallDamageToggle = LocalPlayerSection:AddToggle({Name = "Disable Fall Damage", Default = false, Callback = function(value)
             localPlayer.Character.FallDamage.RemoteEvent.Script.Disabled = not value
+            local fakevalue = workspace.AliveData[localPlayer.Name].Status:FindFirstChild("Carry")
+            if fakevalue and not value then
+                fakevalue:Destroy()
+            end
+            if value then
+                local fakevalue = Instance.new("BoolValue")
+                fakevalue.Name = "Carry"
+                fakevalue.Parent = workspace.AliveData[localPlayer.Name].Status
+            end
         end})
-        local OldDays = localPlayer.Data.Days
+        local OldDays = localPlayer.Data.Days.Value
         local ForceDay1 = LocalPlayerSection:AddToggle({Name = "Force Day 1", Default = false, Callback = function(value)
-            localPlayer.Data.Days = value and math.max(1, localPlayer.Data.Days) or OldDays
+            localPlayer.Data.Days.Value = value and math.max(1, localPlayer.Data.Days) or OldDays
         end})
-        local ForceDay1 = LocalPlayerSection:AddToggle({Name = "Auto Pickup Trinkets", Default = false, Callback = function(value)
+        LocalPlayerSection:AddToggle({Name = "Auto Pickup Trinkets", Default = false, Callback = function(value)
             settings.AutoPickup = value
         end})
         local NoRagdoll = LocalPlayerSection:AddToggle({Name = "No Ragdoll", Default = false, Callback = function(value)
@@ -65,6 +74,17 @@ if getService("ReplicatedStorage"):FindFirstChild("JesterRuse") then
             settings.WalkSpeed = value
         end})
 
+        local function CharacterAdded(Character)
+            task.spawn(function()
+                while Character.Parent and task.wait() do
+                    if settings.InfMana then
+                        Character.Stats.Mana.Value = 70
+                    end
+                    if settings.WalkSpeed and settings.WalkSpeed > 0 then
+                        Character.HumanoidRootPart.CFrame += Character.Humanoid.MoveDirection*settings.WalkSpeed*.1
+                    end
+                end
+            end)
             localPlayer.PlayerGui.ChildAdded:Connect(function(child)
                 if child.Name == "Captcha" then
                     local Frame = child:FindFirstChildOfClass("Frame")
@@ -76,20 +96,11 @@ if getService("ReplicatedStorage"):FindFirstChild("JesterRuse") then
                     for i,v in pairs(Options:GetChildren()) do
                         if v.Name == Monster.Name then
                             for i,v in pairs(getconnections(v.MouseButton1Down)) do
-                                v:Fire()
+                                task.delay(.1, function()
+                                    v:Fire()
+                                end)
                             end
                         end
-                    end
-                end
-            end)
-        local function CharacterAdded(Character)
-            task.spawn(function()
-                while Character.Parent and task.wait() do
-                    if settings.InfMana then
-                        Character.Stats.Mana.Value = 70
-                    end
-                    if settings.WalkSpeed and settings.WalkSpeed > 0 then
-                        Character.HumanoidRootPart.CFrame += Character.Humanoid.MoveDirection*settings.WalkSpeed*.1
                     end
                 end
             end)
@@ -109,7 +120,9 @@ if getService("ReplicatedStorage"):FindFirstChild("JesterRuse") then
         end
 
         localPlayer.CharacterAdded:Connect(CharacterAdded)
-        CharacterAdded(localPlayer.Character)
+        if localPlayer.Character then
+            CharacterAdded(localPlayer.Character)
+        end
         local trinkets = {}
         game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("Render").OnClientEvent:Connect(function(Type, State, GUID, TrinketType, Location)
             if Type == "Trinket" then
