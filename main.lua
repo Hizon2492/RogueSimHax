@@ -125,13 +125,13 @@ if getService("ReplicatedStorage"):FindFirstChild("JesterRuse") then
         end
         local trinkets = {}
         game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("Render").OnClientEvent:Connect(function(Type, State, GUID, TrinketType, Location)
-            if Type == "Trinket" then
-                if State == "Render" then
+            if Type == "Trinket" and TrinketType ~= "Nothing" then
+                --if State == "Render" then
                     trinkets[GUID] = {
                         Type = TrinketType,
                         Location = Location,
                     }
-                end
+                --end
             end
         end)
         while task.wait(.1) do
